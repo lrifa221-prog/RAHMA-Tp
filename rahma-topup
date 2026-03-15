@@ -1,0 +1,259 @@
+rahma-topup index.html
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RAHMA TOP UP</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+body{background:#2c3142;color:white;}
+header{background:#e11d48;padding:15px;display:flex;justify-content:space-between;align-items:center;}
+.logo{font-size:20px;font-weight:600;}
+.login-btn{background:#2563eb;padding:6px 12px;border-radius:6px;cursor:pointer;}
+.search{padding:15px;}
+.search input{width:100%;padding:12px;border-radius:10px;border:none;}
+.games{padding:15px;}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.card{background:#1f2333;border-radius:15px;overflow:hidden;cursor:pointer;transition:0.3s;}
+.card:hover{transform:scale(1.05);}
+.card img{width:100%;height:130px;object-fit:cover;}
+.title{padding:8px;text-align:center;font-size:12px;}
+.topup{display:none;padding:20px;}
+.box{background:#1f2333;padding:15px;border-radius:10px;margin-bottom:15px;}
+.box input{width:100%;padding:10px;border:none;border-radius:8px;margin-top:10px;}
+.item-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px;max-height:350px;overflow:auto;}
+.item-btn{background:#e11d48;padding:10px;border:none;border-radius:8px;color:white;cursor:pointer;font-size:13px;}
+.item-btn.active{background:#be123c;}
+.main-btn{width:100%;padding:12px;margin-top:10px;background:#22c55e;border:none;border-radius:8px;color:white;}
+.back-btn{background:#374151;}
+#popup,#loginPopup,#historyPopup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);justify-content:center;align-items:center;}
+.popup-box,.login-box{background:#1f2333;padding:20px;border-radius:10px;text-align:center;width:80%;max-width:300px;}
+.popup-btn{background:#e11d48;border:none;padding:10px 20px;color:white;border-radius:6px;cursor:pointer;margin-top:10px;}
+.social-btn{width:100%;padding:10px;margin-top:10px;border:none;border-radius:8px;cursor:pointer;color:white;}
+.google{background:#ea4335;}
+.facebook{background:#1877f2;}
+.twitter{background:#1da1f2;}
+#trxBtn{background:#2563eb;margin-top:10px;padding:10px;border:none;border-radius:6px;color:white;width:100%;display:none;}
+</style>
+</head>
+<body>
+
+<header>
+<div class="logo">RAHMA TOP UP</div>
+<div style="display:flex;gap:10px">
+<div class="login-btn" onclick="openHistory()">Riwayat</div>
+<div class="login-btn" onclick="openLogin()">Login</div>
+</div>
+</header>
+
+<div class="search">
+<input placeholder="Mau topup games apa?">
+</div>
+
+<div class="games" id="games">
+<div class="grid">
+<div class="card" onclick="openGame('ml')"><img src="ml.jpg"><div class="title">Mobile Legends</div></div>
+<div class="card" onclick="openGame('ff')"><img src="ff.jpg"><div class="title">Free Fire</div></div>
+<div class="card" onclick="openGame('pubg')"><img src="pubg.jpg"><div class="title">PUBG Mobile</div></div>
+<div class="card" onclick="openGame('hsr')"><img src="hsr.jpg"><div class="title">Honkai Star Rail</div></div>
+</div>
+</div>
+
+<div class="topup" id="topup">
+<h2 id="gameTitle"></h2>
+
+<div class="box">Masukkan User ID
+<input id="userid" placeholder="User ID / Nickname">
+</div>
+
+<div class="box">Masukkan Email
+<input id="email" placeholder="Email Anda">
+</div>
+
+<div class="box">Masukkan No WA
+<input id="phone" placeholder="08xxxxxx">
+</div>
+
+<div class="box">Pilih Nominal
+<div class="item-grid" id="itemList"></div>
+</div>
+
+<div class="box">Pilih Metode Pembayaran
+<div class="item-grid">
+<button class="item-btn pay-btn" onclick="paySelect(this,'Dana')">Dana</button>
+<button class="item-btn pay-btn" onclick="paySelect(this,'GoPay')">GoPay</button>
+</div>
+</div>
+
+<div class="box">Upload Bukti Transfer
+<input type="file" id="trxFile" accept="image/*">
+</div>
+
+<div class="box">
+Status: <span id="trxStatus">Belum bayar</span>
+</div>
+
+<button class="main-btn" onclick="order()">Beli Sekarang</button>
+<button class="main-btn back-btn" onclick="back()">Kembali</button>
+</div>
+
+<div id="popup">
+<div class="popup-box">
+<p id="popupText"></p>
+<button class="popup-btn" onclick="closePopup()">OK</button>
+<button id="trxBtn" onclick="sendTrx()">Kirim Trx</button>
+</div>
+</div>
+
+<div id="loginPopup">
+<div class="login-box">
+<h3>Login Akun</h3>
+<button class="social-btn google" onclick="socialLogin('Google')">Login Google</button>
+<button class="social-btn facebook" onclick="socialLogin('Facebook')">Login Facebook</button>
+<button class="social-btn twitter" onclick="socialLogin('Twitter')">Login Twitter</button>
+<button class="popup-btn" onclick="closeLogin()">Tutup</button>
+</div>
+</div>
+
+<div id="historyPopup">
+<div class="login-box">
+<h3>Riwayat Top Up</h3>
+<div id="historyList" style="max-height:300px;overflow:auto;font-size:12px;text-align:left"></div>
+<button class="popup-btn" onclick="closeHistory()">Tutup</button>
+</div>
+</div>
+
+<script>
+let game="", item="", price=0, pay="", orderCode="";
+let countdown;
+
+const items={
+ml:[{name:"Weekly Diamond Pass",price:28000},{name:"Weekly Diamond Pass 2x",price:58000},{name:"Weekly Diamond Pass 3x",price:86000},{name:"86 Diamond",price:17000},{name:"172 Diamond",price:34000},{name:"257 Diamond",price:50000},{name:"344 Diamond",price:67000},{name:"514 Diamond",price:100000},{name:"878 Diamond",price:165000},{name:"1412 Diamond",price:265000},{name:"2195 Diamond",price:400000},{name:"3688 Diamond",price:660000},{name:"5532 Diamond",price:990000},{name:"9288 Diamond",price:1650000}],
+ff:[{name:"5 Diamond",price:1000},{name:"12 Diamond",price:2500},{name:"50 Diamond",price:7000},{name:"70 Diamond",price:10000},{name:"140 Diamond",price:20000},{name:"355 Diamond",price:45000},{name:"Booyah Pass",price:44500},{name:"720 Diamond",price:90000},{name:"1000 Diamond",price:125000},{name:"1450 Diamond",price:175000},{name:"2180 Diamond",price:260000}],
+pubg:[{name:"60 UC",price:15000},{name:"325 UC",price:75000},{name:"660 UC",price:150000}],
+hsr:[{name:"60 Oneiric",price:16000},{name:"300 Oneiric",price:79000},{name:"980 Oneiric",price:239000}]
+};
+
+document.querySelector(".search input").addEventListener("input", e=>{
+    const val = e.target.value.toLowerCase();
+    document.querySelectorAll(".grid .card").forEach(card=>{
+        const title = card.querySelector(".title").innerText.toLowerCase();
+        card.style.display = title.includes(val) ? "block" : "none";
+    });
+});
+
+function openGame(g){
+    game=g;
+    document.getElementById("games").style.display="none";
+    document.getElementById("topup").style.display="block";
+    document.getElementById("gameTitle").innerText="Top Up "+g.toUpperCase();
+    let html="";
+    items[g].forEach(x=>{
+        html+=`<button class="item-btn" onclick="selectItem(this,'${x.name}',${x.price})">${x.name}<br>Rp ${x.price.toLocaleString()}</button>`;
+    });
+    document.getElementById("itemList").innerHTML=html;
+}
+
+function selectItem(el,name,p){
+    document.querySelectorAll("#itemList .item-btn").forEach(b=>b.classList.remove("active"));
+    el.classList.add("active");
+    item=name;
+    price=p;
+}
+
+function paySelect(el,name){
+    document.querySelectorAll(".pay-btn").forEach(b=>b.classList.remove("active"));
+    el.classList.add("active");
+    pay=name;
+}
+
+function order(){
+    let id=document.getElementById("userid").value;
+    let email=document.getElementById("email").value;
+    let phone=document.getElementById("phone").value;
+
+    if(id==""||email==""||phone==""||item==""||pay==""){
+        showPopup("Isi semua data terlebih dahulu");
+        return;
+    }
+
+    orderCode = 'TRX'+Math.floor(Math.random()*900000+100000);
+    updateStatus("Pending");
+
+    let timeLeft = 300;
+    clearInterval(countdown);
+    showPopup(`TF KE NO: 087823020881\nBATAS WAKTU: 5:00`);
+    document.getElementById("trxBtn").style.display="block";
+
+    countdown = setInterval(()=>{
+        timeLeft--;
+        let min=Math.floor(timeLeft/60);
+        let sec=(timeLeft%60).toString().padStart(2,'0');
+        const popupText = document.getElementById("popupText");
+        popupText.innerText=`TF KE NO: 087823020881\nBATAS WAKTU: ${min}:${sec}`;
+        popupText.style.color = (timeLeft<=60) ? "red" : "white";
+        if(timeLeft<=0){
+            clearInterval(countdown);
+            closePopup();
+            showPopup("Waktu pembayaran habis! Silahkan ulangi transaksi.");
+            pay="";
+            document.getElementById("trxBtn").style.display="none";
+            updateStatus("Belum bayar");
+        }
+    },1000);
+}
+
+function sendTrx(){
+    let text = `Saya ingin mengirim bukti TF\nKode: ${orderCode}`;
+    let waUrl = "https://wa.me/6287823020881?text=" + encodeURIComponent(text);
+
+    try { window.location.href = waUrl; }
+    catch(e){}
+
+    // fallback copy
+    setTimeout(()=>{
+        navigator.clipboard.writeText(text).then(()=>{
+            alert("Kode transaksi sudah dicopy! Silahkan buka WhatsApp dan paste.");
+        }).catch(()=>{
+            alert("Gagal menyalin kode. Silahkan salin manual: " + text);
+        });
+    },1000);
+}
+
+function updateStatus(status){ document.getElementById("trxStatus").innerText = status; }
+
+function back(){ document.getElementById("games").style.display="block"; document.getElementById("topup").style.display="none"; }
+function showPopup(text){ document.getElementById("popupText").innerText=text; document.getElementById("popup").style.display="flex"; }
+function closePopup(){ document.getElementById("popup").style.display="none"; document.getElementById("trxBtn").style.display="none"; }
+function openLogin(){ document.getElementById("loginPopup").style.display="flex"; }
+function closeLogin(){ document.getElementById("loginPopup").style.display="none"; }
+function socialLogin(name){ showPopup("Login dengan "+name+" sedang dikembangkan"); }
+
+function saveHistory(data){ 
+    let history=JSON.parse(localStorage.getItem("topupHistory"))||[]; 
+    history.unshift(data); 
+    localStorage.setItem("topupHistory",JSON.stringify(history));
+}
+
+function openHistory(){
+    document.getElementById("historyPopup").style.display="flex";
+    let history=JSON.parse(localStorage.getItem("topupHistory"))||[];
+    let html="";
+    if(history.length==0){ html="Belum ada transaksi"; }
+    else{ history.forEach(x=>{
+        html+=`<div style="background:#111827;padding:8px;border-radius:6px;margin-bottom:6px">
+        Tanggal: ${x.date}<br>
+        Game: ${x.game}<br>ID: ${x.id}<br>Email: ${x.email}<br>WA: ${x.phone}<br>
+        Item: ${x.item}<br>Harga: Rp ${x.price.toLocaleString()}<br>Pembayaran: ${x.pay}<br>
+        Status: ${x.status}</div>`;
+    }); }
+    document.getElementById("historyList").innerHTML=html;
+}
+
+function closeHistory(){ document.getElementById("historyPopup").style.display="none"; }
+</script>
+
+</body>
+</html>
